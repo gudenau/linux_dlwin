@@ -33,6 +33,7 @@ DlWinError dlwin_openPeFile(const char* path, PeFile** file) {
     // Forward declerations for gotos
     int sectionCount = 0;
     Segment** sections = nullptr;
+    Exports* exports = nullptr;
 
     auto handle = new File(path, &result);
     if(result) return result;
@@ -85,14 +86,26 @@ DlWinError dlwin_openPeFile(const char* path, PeFile** file) {
 
     sectionCount = coffHeader.numberOfSections;
     sections = (Segment**) calloc(sectionCount, sizeof(Segment*));
-    for(int i = 0; i < coffHeader.numberOfSections; i++) {
+    for(int i = 0; i < sectionCount; i++) {
         sections[i] = new Segment(handle, optionalHeader.imageBase, &result);
         if(result) goto cleanup;
     }
-    for(int i = 0; i < coffHeader.numberOfSections; i++) {
+    for(int i = 0; i < sectionCount; i++) {
         result = sections[i]->read(handle);
         if(result) goto cleanup;
     }
+
+    size_t dataAddress;
+    dataAddress = optionalHeader.dataDirectory[0].virtualAddress;
+    Segment* exportSegment;
+    exportSegment = nullptr;
+    for(int i = 0; i < sectionCount; i++) {
+        if(sections[i]->containsRva(dataAddress)) {
+            exportSegment = sections[i];
+            break;
+        }
+    }
+    exports = new Exports(exportSegment, exportSegment->rva(dataAddress), &result);
 
     for(int i = 0; i < sectionCount; i++) {
         result = sections[i]->protect();
@@ -105,11 +118,16 @@ DlWinError dlwin_openPeFile(const char* path, PeFile** file) {
     memcpy(&data->optionalHeader, &optionalHeader, sizeof(optionalHeader));
     data->sections = sections;
     data->sectionCount = sectionCount;
+    data->exports = exports;
     *file = data;
 
     return DLWIN_SUCCESS;
 
 cleanup:
+    if(exports) {
+        delete exports;
+    }
+
     for(int i = 0; i < sectionCount; i++) {
         if(sections[i]) {
             delete sections[i];
@@ -131,6 +149,10 @@ dlwin_export DlWinError dlwin_closePeFile(PeFile** file) {
     result = nullCheck(data, 2);
     if(result) return result;
 
+    if(data->exports) {
+        delete data->exports;
+    }
+
     auto sections = data->sections;
     if(sections) {
         auto sectionCount = data->sectionCount;
@@ -150,4 +172,30 @@ dlwin_export DlWinError dlwin_closePeFile(PeFile** file) {
     *file = nullptr;
 
     return DLWIN_SUCCESS;
+}
+
+dlwin_export void* dlwin_sym(PeFile* file, const char* name) {
+    if(!file || !name) {
+        return nullptr;
+    }
+
+    auto exports = file->exports;
+    if(!exports) {
+        return nullptr;
+    }
+
+    return exports->symbol(name);
+}
+
+dlwin_export void* dlwin_ordinal(PeFile* file, u32 ordinal) {
+    if(!file) {
+        return nullptr;
+    }
+
+    auto exports = file->exports;
+    if(!exports) {
+        return nullptr;
+    }
+
+    return exports->symbol(ordinal);
 }

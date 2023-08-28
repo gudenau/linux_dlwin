@@ -24,6 +24,7 @@ Segment::Segment(File* file, size_t base, DlWinError* error) {
     }
 
     m_data = MAP_FAILED;
+    m_base = base;
 
     auto result = file->read(&m_header, sizeof(m_header));
     if(result) {
@@ -39,6 +40,11 @@ Segment::Segment(File* file, size_t base, DlWinError* error) {
     if(m_data == MAP_FAILED) {
         *error = dlwin_error(DLWIN_ERROR_ALLOC, errno);
         return;
+    }
+
+    if(prefered != m_data) {
+        fprintf(stderr, "FIX RVAs and relocations!\n");
+        abort();
     }
 }
 
@@ -88,4 +94,12 @@ size_t Segment::dataSize(void) {
 
 const char* Segment::name(void) {
     return this->m_name;
+}
+
+void* Segment::rva(size_t value) {
+    return (void*) (this->m_base + value);
+}
+
+bool Segment::containsRva(size_t value) {
+    return value >= m_header.virtualAddress && value < m_header.virtualAddress + this->dataSize();
 }

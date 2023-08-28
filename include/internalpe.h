@@ -5,6 +5,7 @@
 #include "error.h"
 #include "misc.h"
 
+#include "pe/Exports.h"
 #include "pe/Segment.h"
 
 #define DOS_MAGIC   (0x5A4D)
@@ -117,6 +118,7 @@ typedef struct {
 
 struct PeFile {
     pe::Segment** sections;
+    pe::Exports* exports;
     File* file;
 
     CoffFileHeader coffHeader;

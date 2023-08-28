@@ -13,6 +13,8 @@ typedef struct PeFile PeFile;
 
 dlwin_export DlWinError dlwin_openPeFile(const char* path, PeFile** file);
 dlwin_export DlWinError dlwin_closePeFile(PeFile** file);
+dlwin_export void* dlwin_sym(PeFile* file, const char* name);
+dlwin_export void* dlwin_ordinal(PeFile* file, u32 ordinal);
 
 #ifdef __cplusplus
 }

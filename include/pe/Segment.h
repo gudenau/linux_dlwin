@@ -30,12 +30,15 @@ namespace pe {
         void* data(void);
         size_t dataSize(void);
         const char* name(void);
+        void* rva(size_t value);
+        bool containsRva(size_t value);
 
         DlWinError read(File* file);
         DlWinError protect(void);
 
     private:
         void* m_data;
+        size_t m_base;
         SegmentHeader m_header;
         char m_name[9];
     };
