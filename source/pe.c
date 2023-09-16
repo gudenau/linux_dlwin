@@ -90,8 +90,8 @@ static int readHeaders(int file, PeFile* handle) {
 static int readSections(int file, PeFile* handle) {
     u64 base = handle->type == PE_TYPE_32 ? handle->header32.optional.imageBase : handle->header64.optional.imageBase;
 
-    int sectionCount = handle->sectionCount;
-    for(int i = 0; i < sectionCount; i++) {
+    u32 sectionCount = handle->sectionCount;
+    for(u32 i = 0; i < sectionCount; i++) {
         PeSection* section = &handle->sections[i];
         if(lseek(file, section->header.pointerToRawData, SEEK_SET) < 0) {
             return errno;
@@ -291,17 +291,19 @@ cleanup:
 }
 
 void PeFile_close(PeFile* file) {
+    free(file->exports);
+
     PeImport* imports = file->imports;
     if(imports) {
-        int importCount = file->importCount;
-        for(int i = 0; i < importCount; i++) {
+        u32 importCount = file->importCount;
+        for(u32 i = 0; i < importCount; i++) {
             free(imports[i].functions);
         }
         free(imports);
     }
 
-    int sectionCount = file->sectionCount;
-    for(int i = 0; i < sectionCount; i++) {
+    u32 sectionCount = file->sectionCount;
+    for(u32 i = 0; i < sectionCount; i++) {
         PeSection* section = &file->sections[i];
         if(section->pointer) {
             munmap(section->pointer, section->header.virtualSize);
@@ -309,6 +311,9 @@ void PeFile_close(PeFile* file) {
     }
 
     free(file->sections);
+
+    memset(file, 0, sizeof(PeFile));
+
     free(file);
 }
 
@@ -325,8 +330,8 @@ PeDataDirectory* PeFile_dataDir(PeFile* file, PeDataDir directory) {
 }
 
 PeSection* PeFile_section(PeFile* file, const char* name) {
-    int sectionCount = file->sectionCount;
-    for(int i = 0; i < sectionCount; i++) {
+    u32 sectionCount = file->sectionCount;
+    for(u32 i = 0; i < sectionCount; i++) {
         if(strcmp(file->sections[i].name, name) == 0) {
             return &file->sections[i];
         }
@@ -336,8 +341,8 @@ PeSection* PeFile_section(PeFile* file, const char* name) {
 }
 
 void* PeFile_resolveAddress(PeFile* file, u32 rva) {
-    int sectionCount = file->sectionCount;
-    for(int i = 0; i < sectionCount; i++) {
+    u32 sectionCount = file->sectionCount;
+    for(u32 i = 0; i < sectionCount; i++) {
         PeSection* section = &file->sections[i];
         u32 virtualAddress = section->header.virtualAddress;
         if(rva >= virtualAddress && rva < virtualAddress + section->header.virtualSize) {
