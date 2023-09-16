@@ -1,4 +1,7 @@
 .vscode/
+.idea/
 build/
-test/
+cmake-build-debug/
 *.so
+*.dll
+/test/test
