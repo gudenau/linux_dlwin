@@ -16,6 +16,12 @@ __attribute__((ms_abi)) static int MessageBoxA(void* window, const char* text, c
     return 0;
 }
 
+typedef void (*testFunc)(void) __attribute__((ms_abi));
+typedef uint8_t (*testFunc8)(uint8_t, uint8_t) __attribute__((ms_abi));
+typedef uint16_t (*testFunc16)(uint16_t, uint16_t) __attribute__((ms_abi));
+typedef uint32_t (*testFunc32)(uint32_t, uint32_t) __attribute__((ms_abi));
+typedef uint64_t (*testFunc64)(uint64_t, uint64_t) __attribute__((ms_abi));
+
 int main(int argc, char** argv) {
     (void) argc;
     (void) argv;
@@ -40,11 +46,11 @@ int main(int argc, char** argv) {
     };
     dlwin_bind(handle, "USER32.dll", user32);
 
-    void (*test)(void) = dlwin_sym(handle, "test");
-    uint8_t (*test8)(uint8_t, uint8_t) __attribute__((ms_abi)) = dlwin_sym(handle, "test8");
-    uint16_t (*test16)(uint16_t, uint16_t) __attribute__((ms_abi)) = dlwin_sym(handle, "test16");
-    uint32_t (*test32)(uint32_t, uint32_t) __attribute__((ms_abi)) = dlwin_sym(handle, "test32");
-    uint64_t (*test64)(uint64_t, uint64_t) __attribute__((ms_abi)) = dlwin_sym(handle, "test64");
+    testFunc test = dlwin_sym(handle, "test");
+    testFunc8 test8 = dlwin_sym(handle, "test8");
+    testFunc16 test16 = dlwin_sym(handle, "test16");
+    testFunc32 test32 = dlwin_sym(handle, "test32");
+    testFunc64 test64 = dlwin_sym(handle, "test64");
 
     test();
     printf("%d\n", test8(12, 21));
