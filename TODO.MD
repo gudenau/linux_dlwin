@@ -1,0 +1,5 @@
+- General input validation
+- Segment relocations
+- Better coverage of PE export/import shenanigans
+- i386 on AMD64?
+- Documentation
